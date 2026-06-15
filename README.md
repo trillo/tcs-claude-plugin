@@ -11,13 +11,13 @@ marketplace catalog and the plugin.
 
 ```bash
 # 1. Add this repo as a marketplace
-claude plugin marketplace add trilloinc/trillo-claude-plugin
+claude plugin marketplace add trillo/tcs-claude-plugin
 
 # 2. Install the plugin
 claude plugin install trillo@trillo
 ```
 
-(Or interactively: `/plugin marketplace add trilloinc/trillo-claude-plugin`
+(Or interactively: `/plugin marketplace add trillo/tcs-claude-plugin`
 then `/plugin install trillo@trillo`.)
 
 ## First use
@@ -30,7 +30,7 @@ then `/plugin install trillo@trillo`.)
 ## Layout
 
 ```
-trillo-claude-plugin/
+tcs-claude-plugin/
 ├── .claude-plugin/
 │   ├── plugin.json          # plugin manifest (name "trillo")
 │   └── marketplace.json     # marketplace catalog (lists this plugin)
