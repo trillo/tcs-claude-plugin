@@ -52,6 +52,29 @@ public Trillo AI URL. The OAuth `clientId` (`trillo-claude-code`) is a
 public client (PKCE, no secret) and is safe to ship; `callbackPort` is the
 loopback port Claude Code uses for the OAuth redirect.
 
+## Local development — self-signed certificate
+
+The dev gateway serves a **self-signed TLS cert**, which Claude Code's MCP
+client (and the OAuth discovery call) reject by default — the server shows
+`✘ failed · self signed certificate`. This is a **dev-only** issue; a
+production URL with a valid cert won't see it.
+
+Relaunch Claude Code with TLS verification relaxed **before** authenticating
+(the cert blocks the OAuth discovery call too, so it must come first):
+
+```bash
+# blunt, dev-only — skip cert verification entirely
+NODE_TLS_REJECT_UNAUTHORIZED=0 claude
+
+# or cleaner — trust only the dev gateway cert
+openssl s_client -connect localhost:9020 -showcerts </dev/null 2>/dev/null \
+  | openssl x509 -outform PEM > ~/trillo-dev-gateway.pem
+NODE_EXTRA_CA_CERTS=~/trillo-dev-gateway.pem claude
+```
+
+Then `/plugin` (or `/mcp`) → `trillo-ai` → **Authenticate**. See
+`TESTING.md` for the full clean-room procedure.
+
 ## Plan
 
 See `trillo-aos/docs/plan-59-claude-code-authoring.md` (slice 59.B) for the
