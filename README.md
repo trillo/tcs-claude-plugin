@@ -1,81 +1,68 @@
 # Trillo — Claude Code plugin
 
-Author **Trillo AOS** applications from Claude Code. The plugin registers
-one OAuth-protected MCP server (**Trillo AI**) and ships skills that guide
-a session through login → app select/create → generation → deploy.
+Build and ship **Trillo AOS applications** without leaving Claude Code.
+Install the plugin, sign in to your Trillo account, and Claude can discover
+or create an app, generate its entities/functions/agents, write and refine
+the code, and deploy — all over a single secure connection.
 
-Distributed as a self-hosted marketplace: this repo is **both** the
-marketplace catalog and the plugin.
+## What it does
+
+The plugin registers one MCP server (**Trillo AI**) and ships a guide skill.
+From a Claude Code session you can:
+
+- **Pick or create an app** to work on (`app_list`, `app_select`, `app_create`).
+- **Author the app's metadata** — software spec, entity model, functions,
+  agents, UI specs — reading and writing through Trillo AI.
+- **Generate and refine function code** locally, persisted back to Trillo.
+- **Deploy** to your Trillo AOS dev environment and test the running app.
+
+The `trillo:trillo-overview` skill walks Claude through the flow at the
+start of a session.
+
+## Prerequisites
+
+- A **Trillo AI account** — sign up at [trillo.ai](https://trillo.ai).
+- Claude Code (recent version with plugin support).
 
 ## Install
 
 ```bash
-# 1. Add this repo as a marketplace
 claude plugin marketplace add trillo/tcs-claude-plugin
-
-# 2. Install the plugin
 claude plugin install trillo@trillo
 ```
 
-(Or interactively: `/plugin marketplace add trillo/tcs-claude-plugin`
+(Or interactively: `/plugin marketplace add trillo/tcs-claude-plugin`,
 then `/plugin install trillo@trillo`.)
 
 ## First use
 
-1. `/mcp` → select **trillo-ai** → **authenticate**. A browser opens
-   Trillo AI's login; sign in with your Trillo AI account.
-2. Ask Claude to start — the `trillo:trillo-overview` skill drives the
-   rest (`app_list` → `app_select`/`app_create` → author → deploy).
+1. Run **`/mcp`**, select **trillo-ai**, choose **Authenticate**. A browser
+   opens the Trillo sign-in page; log in and (if prompted) choose the
+   workspace to work in. Claude Code stores your credentials securely and
+   refreshes them automatically.
+2. Ask Claude to get started — e.g. *"list my Trillo apps"* or *"create a
+   new Trillo app for …"*. The `trillo:trillo-overview` skill guides the
+   rest.
 
-## Layout
+That's it — no tokens to copy, no files to download.
 
-```
-tcs-claude-plugin/
-├── .claude-plugin/
-│   ├── plugin.json          # plugin manifest (name "trillo")
-│   └── marketplace.json     # marketplace catalog (lists this plugin)
-├── .mcp.json                # Trillo AI MCP server: http url + OAuth client
-├── skills/
-│   └── trillo-overview/SKILL.md   # session bootstrap (auth + app lifecycle)
-└── README.md
-```
+## How it works
 
-More skills (function-codegen, testing, deploy, building-an-app) and a
-`prompts/` set are added incrementally (plan-59.B).
+- **Secure sign-in (OAuth).** Authentication is standard OAuth handled by
+  Claude Code; the plugin ships only a public client id, never a secret.
+  Tokens live in your OS keychain.
+- **One connection.** Everything — app discovery, metadata, code, deploy —
+  flows through the Trillo AI MCP server. Tools load progressively
+  (`discovery_list_groups` / `discovery_load_group`) so the surface stays
+  small until you need more.
+- **Dev-scoped.** Claude Code authors apps in your **dev** environment;
+  promotion to production is done from the Trillo UI.
 
-## ⚠️ Environment URL
+## Support
 
-`.mcp.json` currently points the `trillo-ai` server at
-`https://localhost:9020/api/v2.0/mcp` — the **local dev** Trillo AI
-gateway. Before distributing the plugin publicly, change that `url` to the
-public Trillo AI URL. The OAuth `clientId` (`trillo-claude-code`) is a
-public client (PKCE, no secret) and is safe to ship; `callbackPort` is the
-loopback port Claude Code uses for the OAuth redirect.
+- Docs & sign-up: [trillo.ai](https://trillo.ai)
+- Issues: please file them in this repository.
 
-## Local development — self-signed certificate
+## License
 
-The dev gateway serves a **self-signed TLS cert**, which Claude Code's MCP
-client (and the OAuth discovery call) reject by default — the server shows
-`✘ failed · self signed certificate`. This is a **dev-only** issue; a
-production URL with a valid cert won't see it.
-
-Relaunch Claude Code with TLS verification relaxed **before** authenticating
-(the cert blocks the OAuth discovery call too, so it must come first):
-
-```bash
-# blunt, dev-only — skip cert verification entirely
-NODE_TLS_REJECT_UNAUTHORIZED=0 claude
-
-# or cleaner — trust only the dev gateway cert
-openssl s_client -connect localhost:9020 -showcerts </dev/null 2>/dev/null \
-  | openssl x509 -outform PEM > ~/trillo-dev-gateway.pem
-NODE_EXTRA_CA_CERTS=~/trillo-dev-gateway.pem claude
-```
-
-Then `/plugin` (or `/mcp`) → `trillo-ai` → **Authenticate**. See
-`TESTING.md` for the full clean-room procedure.
-
-## Plan
-
-See `trillo-aos/docs/plan-59-claude-code-authoring.md` (slice 59.B) for the
-plugin design and roadmap.
+© Trillo Inc. All rights reserved.
