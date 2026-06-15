@@ -2,23 +2,7 @@
   "mcpServers": {
     "trillo-ai": {
       "type": "http",
-      "url": "https://api.trillo.ai/api/v2.0/mcp",
-      "oauth": {
-        "clientId": "trillo-claude-code",
-        "callbackPort": 8080
-      }
-    },
-    "trillo-ai-dev": {
-      "type": "http",
-      "url": "https://api-dev.trillo.ai/api/v2.0/mcp",
-      "oauth": {
-        "clientId": "trillo-claude-code",
-        "callbackPort": 8080
-      }
-    },
-    "trillo-ai-local": {
-      "type": "http",
-      "url": "https://localhost:9020/api/v2.0/mcp",
+      "url": "${TRILLO_MCP_URL:-https://api.trillo.ai/api/v2.0/mcp}",
       "oauth": {
         "clientId": "trillo-claude-code",
         "callbackPort": 8080
