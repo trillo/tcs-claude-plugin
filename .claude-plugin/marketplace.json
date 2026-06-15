@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "trillo",
-      "source": ".",
+      "source": "./",
       "description": "Author Trillo AOS apps from Claude Code over the Trillo AI MCP server (OAuth login).",
       "version": "0.1.0"
     }
