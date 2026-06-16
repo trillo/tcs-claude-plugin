@@ -10,15 +10,28 @@ API) is served live by Trillo AI; your job is to orchestrate the steps and
 write each result back. Keep the user in the loop — this is a conversation,
 not a batch job.
 
-## The step chain
+## The step chain & order — do NOT skip ahead
 
 ```
-Input → SoftwareSpec → EntityModel → Functions → Agents → UIScenario → deploy
+requirements (Input) → SoftwareSpec → { EntityModel, UIScenario } → Functions → Agents → deploy
 ```
 
-Each step depends on the previous one, and the **server enforces it** — a step
-stays `NOT_READY` until its predecessor has output. So you never have to track
-ordering yourself: **`app_status` is the source of truth.**
+Strict rules — follow them, don't guess:
+
+- **On a NEW app, START at requirements** (the **requirements** skill → Input).
+  Do **not** jump to EntityModel/Functions — nothing downstream is valid until
+  Input, then SoftwareSpec, exist.
+- `EntityModel` requires `SoftwareSpec`; `Functions` require `EntityModel`;
+  `Agents` require `Functions`. **Never create entities, functions, or agents
+  before `SoftwareSpec` is COMPLETED.**
+- **`UIScenario` depends only on `SoftwareSpec`** — generate it any time after
+  the spec; it neither blocks nor is blocked by EntityModel/Functions/Agents.
+
+The server also gates each step (a step stays `NOT_READY` until its predecessor
+has output), so **always call `app_status` first and run `nextActivity`** — it
+is the source of truth for what comes next. If the user asks for a step that
+`app_status` shows `NOT_READY`, tell them what must come first instead of
+forcing it.
 
 ## On every turn (and whenever the user asks "what's next?")
 
