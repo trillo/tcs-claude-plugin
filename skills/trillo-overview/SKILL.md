@@ -92,7 +92,7 @@ Trillo UI workflow, enforced server-side — don't attempt prod mutations.
 
 ## Typical flow
 
-`app_list` → `app_select`/`app_create` → write `.trillo/session.json` →
-author the spec/entities/functions (`md-crud`) → `deploy` → poll
-`task_events` → test (`activities`). Run `discovery_list_skills` to find
-deeper guides as they ship.
+`app_list` → `app_select`/`app_create` → write `.trillo/session.json` → pull the
+app's artifacts to the local workspace (**workspace** skill) → author the
+spec/entities/functions (`md-crud`) → `deploy` → poll `task_events` → test
+(`activities`). Run `discovery_list_skills` to find deeper guides as they ship.

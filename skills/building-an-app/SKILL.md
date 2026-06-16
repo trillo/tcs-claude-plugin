@@ -36,7 +36,9 @@ forcing it.
 ## On every turn (and whenever the user asks "what's next?")
 
 1. Make sure an app is selected — see the **trillo-overview** skill
-   (`app_list` / `app_select` / `app_create` + `.trillo/session.json`).
+   (`app_list` / `app_select` / `app_create` + `.trillo/session.json`). On first
+   work on an app, pull its artifacts to the local workspace; on returning,
+   resync — see the **workspace** skill.
 2. Call **`app_status`** → `{activities:[{name, status, statusInfo}], nextActivity, deployStatus}`.
 3. Briefly tell the user where things stand — a short checklist:
    `COMPLETED ✓ · READY (do next) · NOT_READY (blocked — statusInfo says on what)` —
