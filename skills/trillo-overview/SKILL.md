@@ -52,8 +52,15 @@ scope its work. (In Trillo, an "app" is identified by this appId.)
 ## 3. The tool surface (progressive disclosure)
 
 Tier 0 tools are always available: `app_list`, `app_select`, `app_create`,
-`md_list_model_classes`, `discovery_list_groups`, `discovery_load_group`,
-`discovery_list_skills`, `task_events`.
+`app_status` (what's done / what's next for an app), `step_guide` (the live
+prompt + output schema for an authoring step), `aos_capabilities` (the
+platform coverage map), `toolkit_stubs` (the `aos_toolkit` API for function
+code), `md_list_model_classes`, `discovery_list_groups`,
+`discovery_load_group`, `discovery_list_skills`, `task_events`.
+
+To build an app step by step, use the **building-an-app** skill — it drives
+Input → SoftwareSpec → EntityModel → Functions → Agents → UIScenario → deploy
+using `app_status` + `step_guide`, asking before each step.
 
 Tier 1 tool groups load on demand — call `discovery_list_groups`, then
 `discovery_load_group(name)`:
