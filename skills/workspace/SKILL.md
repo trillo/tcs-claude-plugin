@@ -20,6 +20,8 @@ Trillo AI. **The DB is authoritative**; the local copy is a working mirror.
     entities/_system/<ClassName>.json   # built-in entities — READ ONLY, reference only
     functions/<fnName>.py           # the function's Python (content.code)
     functions/specs/<fnName>.json   # the function spec (content without code)
+    functions/tests/test_<fnName>.py  # local MockCtx tests (see the functions skill)
+    functions/conftest.py             # `ctx` fixture for local tests (see the functions skill)
     agents/<agentName>.json         # AgentM
     .sync.json                      # sync baseline — git-ignored, do not edit by hand
     .backups/<name>.<ts>            # pre-overwrite backups — git-ignored

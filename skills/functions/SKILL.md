@@ -1,5 +1,5 @@
 ---
-description: The Functions step — generate serverless function specs AND Python code from the SoftwareSpec/EntityModel, test them, and (post-deploy) seed data. Use after EntityModel, or when the user wants to add, edit, or test a function.
+description: The Functions step — generate serverless function specs AND Python code from the SoftwareSpec/EntityModel, test them locally (offline pytest + MockCtx) and against the deployed app, and (post-deploy) seed data. Use after EntityModel, or when the user wants to add, edit, or test a function.
 ---
 
 # Step: Functions — specs + code
@@ -21,12 +21,76 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
    `md_create modelClassName="FunctionM" name="<fn>" content={name, description,
    params, returns, code, runtime, ...}`.
 
-## Test
+## Test locally first (offline, MockCtx — fast, no deploy)
 
-Requires the app **deployed** (`deployStatus == "deployed"`). Use
-`function_test_sync` (load the `activities` group via `discovery_load_group`
-if it isn't in your tool list) → run with sample inputs, read the result, fix
-the Python (`md_update FunctionM`), re-test until green.
+Run logic tests in seconds with the toolkit's `MockCtx`. **Default-on: do this
+before deploying.** These are *logic* tests against mocked AOS — they catch most
+bugs in seconds; the deployed test (next section) is the integration truth.
+
+**One-time workspace setup:**
+- `pip install aos-toolkit` — provides `aos_toolkit` + `aos_toolkit_mock` +
+  pytest. (The user owns the toolkit; don't modify it.)
+- If `.trillo/<appId>/functions/conftest.py` is missing, create it — it supplies
+  the `ctx` fixture and puts the functions dir on `sys.path`:
+
+  ```python
+  """Workspace test conftest — `ctx` (MockCtx) for local function tests."""
+  from __future__ import annotations
+  import sys
+  from pathlib import Path
+  import pytest
+  import aos_toolkit
+  from aos_toolkit_mock import MockCtx
+
+  _FUNCTIONS = Path(__file__).resolve().parent
+  if str(_FUNCTIONS) not in sys.path:
+      sys.path.insert(0, str(_FUNCTIONS))
+
+  @pytest.fixture
+  def ctx(monkeypatch):
+      mock = MockCtx()
+      monkeypatch.setattr(aos_toolkit, "ctx", mock)
+      for mod in list(sys.modules.values()):  # patch any loaded function module's ctx
+          f = getattr(mod, "__file__", None)
+          if f and str(_FUNCTIONS) in str(f) and hasattr(mod, "ctx"):
+              monkeypatch.setattr(mod, "ctx", mock, raising=False)
+      return mock
+  ```
+
+**Write the test** `functions/tests/test_<fn>.py` — **happy + negative
+branches** (mirror the toolkit examples): preload the reads the handler makes,
+call `handler({...})`, assert on the result and on writes/effects.
+
+```python
+from <fnName> import handler
+
+def test_happy(ctx):
+    ctx.data.preload_get("Product", 1, {"id": 1, "inventory": 10})
+    result = handler({"productId": 1, "quantity": 2})
+    assert result["success"] is True
+    assert ctx.data.was_called("create", class_name="Order")
+
+def test_rejects_missing_param(ctx):
+    assert handler({})["success"] is False  # missing required params
+```
+Assertion surface: `ctx.data.preload_get/preload_create`, `ctx.data.last_call(...)`,
+`ctx.data.was_called(...)`, `ctx.audit.was_called(...)`, `ctx.email.was_called(...)`.
+Cover happy path + missing/invalid params + not-found + guard failures.
+
+**Run:** `pytest functions/tests/test_<fn>.py` (offline). Read failures, fix
+`functions/<fn>.py`, re-run — seconds, no deploy.
+
+> Get local tests green **before** deploying. If the user says deploy anyway,
+> warn and proceed — local pass is a quality signal, not a hard gate (some
+> functions need real data; the deployed test is the real check).
+
+## Test against AOS (integration truth, post-deploy)
+
+After local tests pass → push (`md_update`) → `deploy_app` → `function_test_sync`
+(load the `activities` group via `discovery_load_group` if needed): runs the
+real function against live AOS data — the check `MockCtx` can't give. Fix
+(`md_update FunctionM`) → re-test (no redeploy between code edits; the test sends
+your current code).
 
 ## Seed data (optional, post-deploy)
 
