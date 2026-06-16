@@ -64,9 +64,9 @@ re-derives downstream readiness.
 ## Capability gaps
 
 If a requirement needs something AOS doesn't support yet, ground yourself with
-`aos_capabilities` (the coverage map: In place / Partial / Gap) and tell the
-user plainly rather than faking it. (A first-class "file an enhancement
-request" flow is coming.)
+`aos_capabilities` (the coverage map: In place / Partial / Gap), tell the user
+plainly rather than faking it, and — with their OK — file it via
+`request_aos_capability`. See the **request-aos-capability** skill.
 
 ## Guardrails
 
