@@ -10,6 +10,18 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 
 ## Generate
 
+> **Never generate authentication/identity functions.** The platform owns the
+> *entire* identity surface — login, logout, signup, password set/change/reset
+> (incl. admin reset), OTP send/verify, MFA/2FA setup/disable/challenge/validate,
+> backup codes, email/phone verification, token issue/refresh/invalidate/revoke,
+> session management, user/role admin. These are NOT app functions: they write
+> protected platform classes and are dead on arrival. **If a spec lists one
+> (e.g. `sendOtp`, `setupMfa`, `resetPassword`), skip it** — don't write a spec
+> or code for it. More generally, a function must **never read or write the
+> platform identity/secret classes** (`User`, `UserToToken`, `UserToTenant`,
+> `AppRole`, `UserToAppRoleToTenant`, `Invitation`, `OAuth*`, `AppSecret`,
+> `ExternalService`) — those are reached only through dedicated platform APIs.
+
 1. `step_guide({step:"Functions"})` → prompt + `expectedOutputSchema` +
    `systemClasses` + a toolkit note.
 2. **`toolkit_stubs()`** → the typed `aos_toolkit` API (`data`, `files`,

@@ -19,8 +19,13 @@ seeds the app's roles + onboarding matrix server-side and unlocks
    prompt's rules:
    - personas **camelCase** (use `admin` for administrators),
    - entity names **PascalCase**, function names **camelCase**,
-   - backend only — **no CRUD, no auth/login/signup, no UI wireframes, no
-     infra/deploy** requirements (those are built in or handled elsewhere),
+   - backend only — **no CRUD, no UI wireframes, no infra/deploy** requirements,
+   - **no authentication/identity functions or requirements** — the platform
+     owns the *entire* identity surface: login, logout, signup, password
+     set/change/reset (incl. admin reset), OTP, MFA/2FA, email/phone
+     verification, tokens, sessions, user/role admin. Never list these in
+     `functions[]` or `functionalRequirements` (they'd write protected `User`/
+     `UserToToken` classes and can't work),
    - mark anything you inferred (not stated by the user) with `"inferred": true`.
 
 ## Write
