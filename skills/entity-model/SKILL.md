@@ -18,6 +18,36 @@ them, never define them. Depends on `SoftwareSpec` being COMPLETED.
 The full model = custom + system. Always account for the system entities so you
 don't duplicate them.
 
+## Reserved entity names — never create these
+
+The platform owns a set of class names. **Never create a `ClassM` with any of
+these names** — the deploy silently drops the collision and your "table" then
+resolves to the *platform's* table (e.g. an app `Task` returns background-job
+rows; an app `Conversation` writes into the agent-conversation table). If your
+domain needs one of these concepts, **qualify the name** (e.g. `ScheduledTask`,
+`ClientConversation`, `AppGroup`, `ClientTemplate`, `ClientSecret`).
+
+Reserved (platform) class names:
+
+```
+AIUsage, Activity, ActivityOutput, ActivityOutputArchive, Agent,
+AgentConversation, AgentMemory, AgentMessage, ApiClient, AppConfig,
+AppMDCollection, AppRole, AppSecret, Application, AuditLog, BillingAccount,
+CodeGenRequest, Conversation, ConversationMessage, Email, EmailContact,
+EmailTemplate, EmailUsage, ExternalInterface, ExternalService, File2,
+FileContent, FileRawData, FileToUser, Folder, FolderToUser, Group, GroupToUser,
+HostedApp, Invitation, KnowledgeContainer, KnowledgeNode, MessagePair,
+MetadataApiKey, OAuthAuthCode, OAuthFlowSession, OAuthProvider,
+OAuthRefreshToken, Prompt, RateCard, RecordShare, Secret, SentEmail, Task,
+TaskEvent, TaskQueue, Template, Tenant, TestData, TestLastInput, TrilloMD,
+TrilloMDArchive, TrilloMDVersion, User, UserPreference, UserToAppRoleToTenant,
+UserToTenant, UserToToken, VerificationToken, Workflow
+```
+
+Matching is **case-insensitive** — `task`, `Task`, `TASK` all collide. When the
+SoftwareSpec names an entity that hits this list, rename it (and update every
+reference: function params, agent bindings, relationships) before creating it.
+
 ## Generate
 
 1. `step_guide({step:"EntityModel"})` → prompt + `expectedOutputSchema` + the
