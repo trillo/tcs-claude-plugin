@@ -19,15 +19,21 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
    system entities).
 4. Write each function — spec **and** Python:
    `md_create modelClassName="FunctionM" name="<camelCaseName>" content={name,
-   description, params, returns, code, runtime, ...}`.
-   - **`name`** is the **camelCase linkage key** (what `SoftwareSpec.functions`,
-     agents, and `/fn/{name}` use). The server normalizes it to camelCase, so
-     pass the spec's name as-is.
-   - **`functionName`** (optional) is the **language-idiomatic** symbol/file
-     name — snake_case for Python, camelCase for NodeJS. **Omit it and the
-     server derives it** from `name`+`runtime`; the workspace `.py` file is
-     `functions/<functionName>.py`. The Python `def handler(...)` lives in that
-     file, so it reads naturally snake_case while linkage stays camelCase.
+   functionName, description, params, returns, code, runtime, ...}`.
+   **Generate both names yourself, in the right case** — don't rely on the
+   server to convert:
+   - **`name`** — the **camelCase** linkage key, matching the function's name in
+     `SoftwareSpec.functions` / agent tool bindings / `/fn/{name}` **exactly**.
+     It's the join key across artifacts, so the casing must be stable — always
+     camelCase, never snake_case (a snake_case name would be normalized and an
+     acronym like `draftHTMLDoc` could drift to `draftHtmlDoc`, breaking the
+     match with the spec).
+   - **`functionName`** — the **snake_case** form of `name` (functions are
+     Python). This is the workspace file/symbol: `functions/<functionName>.py`
+     holds the `def handler(...)`, so the code reads naturally snake_case while
+     the linkage key stays camelCase. (NodeJS later: `functionName == name`.)
+   Example: `name: "draftHTMLDoc"`, `functionName: "draft_html_doc"`,
+   file `functions/draft_html_doc.py`.
 
 ## Test locally first (offline, MockCtx — fast, no deploy)
 
@@ -100,6 +106,25 @@ After local tests pass → push (`md_update`) → `deploy_app` → `function_tes
 real function against live AOS data — the check `MockCtx` can't give. Fix
 (`md_update FunctionM`) → re-test (no redeploy between code edits; the test sends
 your current code).
+
+**Test as a specific role.** AOS behavior is often role- and identity-dependent
+(ownership filters, the onboarding matrix, per-role ACL). `function_test_sync`
+runs as tenant-admin; to exercise the app **as any role**, mint a role-scoped
+token and call AOS directly:
+1. **Pick a tenant.** Single-tenant app → use tenant 0 (the default). For a
+   **multi-tenant** app (`AppConfig.multiTenant`), `tenant_list({appId})` to see
+   tenants; `tenant_create({appId, name})` to make a dev test tenant (multi-tenant
+   apps only — single-tenant apps return `APP_NOT_MULTI_TENANT`). Note its
+   `tenantId`.
+2. `aos_token({appId, role, tenantId})` (activities group) → `{aosToken, aosUrl,
+   role, tenantId, expiresAt}`. AOS lazily creates a reserved `_user_<role>`
+   test user in that tenant. `role` must be one of the app's `AppRole`s (or
+   `admin`); list via `md_list(modelClassName="AppRole", appId=...)`. `tenantId`
+   defaults to 0.
+3. Exercise with Bash + curl: `POST {aosUrl}/api/v2.0/fn/{name}` (or `/data/...`)
+   with header `Authorization: Bearer {aosToken}`. Compare what each role can do.
+   Re-mint when the token expires (short TTL). **Dev-only** — refused for
+   prod-promoted apps.
 
 ## Seed data (optional, post-deploy)
 

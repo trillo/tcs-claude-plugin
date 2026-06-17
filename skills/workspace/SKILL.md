@@ -82,9 +82,13 @@ When you change a local artifact (the normal authoring flow), save it back:
 - Read the file(s); for a function, **recombine** `functions/<functionName>.py`
   into `content.code` alongside `functions/specs/<functionName>.json`.
 - `md_update` (or `md_create` for a new artifact) keyed by the spec's `name`
-  (camelCase linkage key — not the file's `functionName`). This bumps the
-  server `updatedAt`. The server normalizes `name` to camelCase and (re)derives
-  `functionName` if you omit it.
+  (camelCase linkage key — read it from `content.name`, not by re-casing the
+  file's `functionName`). This bumps the server `updatedAt`. Always send both
+  `name` (camelCase) and `functionName` (snake_case) in the content — the right
+  case at the source keeps the linkage key stable. FunctionM `name` matching is
+  also **case-insensitive** as a backstop, so an acronym-case slip
+  (`syncCRMContacts` vs `syncCrmContacts`) still updates the right row rather
+  than creating a duplicate — but prefer the exact `content.name`.
 - Refresh that artifact's baseline (`serverUpdatedAt` from the response +
   recomputed `localHash`) so a later resync sees it as in-sync.
 
