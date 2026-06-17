@@ -17,9 +17,17 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
    signatures — do not guess the API.**
 3. Ground on the model: `md_get SoftwareSpec`, `md_list ClassM` (custom +
    system entities).
-4. Write each function — spec **and** Python (camelCase names):
-   `md_create modelClassName="FunctionM" name="<fn>" content={name, description,
-   params, returns, code, runtime, ...}`.
+4. Write each function — spec **and** Python:
+   `md_create modelClassName="FunctionM" name="<camelCaseName>" content={name,
+   description, params, returns, code, runtime, ...}`.
+   - **`name`** is the **camelCase linkage key** (what `SoftwareSpec.functions`,
+     agents, and `/fn/{name}` use). The server normalizes it to camelCase, so
+     pass the spec's name as-is.
+   - **`functionName`** (optional) is the **language-idiomatic** symbol/file
+     name — snake_case for Python, camelCase for NodeJS. **Omit it and the
+     server derives it** from `name`+`runtime`; the workspace `.py` file is
+     `functions/<functionName>.py`. The Python `def handler(...)` lives in that
+     file, so it reads naturally snake_case while linkage stays camelCase.
 
 ## Test locally first (offline, MockCtx — fast, no deploy)
 
@@ -57,12 +65,13 @@ bugs in seconds; the deployed test (next section) is the integration truth.
       return mock
   ```
 
-**Write the test** `functions/tests/test_<fn>.py` — **happy + negative
+**Write the test** `functions/tests/test_<functionName>.py` — **happy + negative
 branches** (mirror the toolkit examples): preload the reads the handler makes,
-call `handler({...})`, assert on the result and on writes/effects.
+call `handler({...})`, assert on the result and on writes/effects. (`<functionName>`
+is the snake_case file name; import the module by that name.)
 
 ```python
-from <fnName> import handler
+from <functionName> import handler
 
 def test_happy(ctx):
     ctx.data.preload_get("Product", 1, {"id": 1, "inventory": 10})
@@ -77,8 +86,8 @@ Assertion surface: `ctx.data.preload_get/preload_create`, `ctx.data.last_call(..
 `ctx.data.was_called(...)`, `ctx.audit.was_called(...)`, `ctx.email.was_called(...)`.
 Cover happy path + missing/invalid params + not-found + guard failures.
 
-**Run:** `pytest functions/tests/test_<fn>.py` (offline). Read failures, fix
-`functions/<fn>.py`, re-run — seconds, no deploy.
+**Run:** `pytest functions/tests/test_<functionName>.py` (offline). Read
+failures, fix `functions/<functionName>.py`, re-run — seconds, no deploy.
 
 > Get local tests green **before** deploying. If the user says deploy anyway,
 > warn and proceed — local pass is a quality signal, not a hard gate (some
