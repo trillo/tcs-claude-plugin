@@ -25,8 +25,10 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 1. `step_guide({step:"Functions"})` → prompt + `expectedOutputSchema` +
    `systemClasses` + a toolkit note.
 2. **`toolkit_stubs()`** → the typed `aos_toolkit` API (`data`, `files`,
-   `email`, `um`, `audit`, `responses`, `memory`). **Ground all code on these
-   signatures — do not guess the API.**
+   `email`, `um`, `audit`, `responses`, `memory`, and `service` for outbound
+   HTTP to external APIs). **Ground all code on these signatures — do not guess
+   the API.** For outbound calls use `ctx.service` (a thin `httpx` client: any
+   method, you pass headers/auth) rather than importing `httpx` directly.
 3. Ground on the model: `md_get SoftwareSpec`, `md_list ClassM` (custom +
    system entities).
 4. Write each function — spec **and** Python:
