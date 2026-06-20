@@ -60,8 +60,13 @@ before deploying.** These are *logic* tests against mocked AOS — they catch mo
 bugs in seconds; the deployed test (next section) is the integration truth.
 
 **One-time workspace setup:**
-- `pip install aos-toolkit` — provides `aos_toolkit` + `aos_toolkit_mock` +
-  pytest. (The user owns the toolkit; don't modify it.)
+- **Install the toolkit** — it isn't on PyPI, so fetch it from the platform:
+  `toolkit_install()` returns `{files, packageDir, installCmd}`. Write each
+  `files` entry to `<packageDir>/<relativePath>` (default `.trillo/toolkit/`),
+  then run its `installCmd` (`pip install -e ".trillo/toolkit[test]"`). That
+  provides `aos_toolkit` + `aos_toolkit_mock` (MockCtx) + pytest. Do this once
+  per workspace (skip if `aos_toolkit` already imports). The user owns the
+  toolkit; don't modify the installed files.
 - If `.trillo/<appId>/functions/conftest.py` is missing, create it — it supplies
   the `ctx` fixture and puts the functions dir on `sys.path`:
 
