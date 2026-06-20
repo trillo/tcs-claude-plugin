@@ -25,8 +25,9 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 1. `step_guide({step:"Functions"})` → prompt + `expectedOutputSchema` +
    `systemClasses` + a toolkit note.
 2. **`toolkit_stubs()`** → the typed `aos_toolkit` API (`data`, `files`,
-   `email`, `um`, `audit`, `responses`, `memory`, `service` for outbound HTTP,
-   `secret` to read app credentials). **Ground all code on these signatures — do
+   `email`, `sms`, `um`, `audit`, `responses`, `memory`, `service` for outbound
+   HTTP, `secret` to read app credentials). Send SMS with `ctx.sms.send(to, body)`
+   or `ctx.sms.send_template(to, name, variables)` (E.164 numbers). **Ground all code on these signatures — do
    not guess the API.** For an **external integration** (Stripe, Gusto, …): read
    the key with `ctx.secret.get("…")` and call the API with `ctx.service`
    (a thin `httpx` client — any method; you pass headers/auth), e.g.
