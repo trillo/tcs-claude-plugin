@@ -22,7 +22,10 @@ Trillo AI. **The DB is authoritative**; the local copy is a working mirror.
     functions/specs/<functionName>.json   # the function spec (content without code)
     functions/tests/test_<functionName>.py  # local MockCtx tests (see the functions skill)
     functions/conftest.py             # `ctx` fixture for local tests (see the functions skill)
-    agents/<agentName>.json         # AgentM
+    agents/<agentName>.py           # codeful/oneshot handler (content.code); file = snake_case(name); codeless has none
+    agents/specs/<agentName>.json   # AgentM spec (content without code) — ALL kinds
+    agents/tests/test_<agentName>.py  # local MockCtx tests for the handler (codeful/oneshot)
+    agents/conftest.py              # `ctx` fixture for local agent tests
     .sync.json                      # sync baseline — git-ignored, do not edit by hand
     .backups/<name>.<ts>            # pre-overwrite backups — git-ignored
 ```
@@ -38,7 +41,7 @@ Add `.trillo/<appId>/.sync.json` and `.trillo/<appId>/.backups/` to `.gitignore`
 | UIScenario | `md_get UIScenario` | `ui-scenario.json` |
 | ClassM | `md_list`/`md_get ClassM` | `entities/<name>.json`; `systemClasses` → `entities/_system/<name>.json` (read-only) |
 | FunctionM | `md_list`/`md_get FunctionM` | `functions/<functionName>.py` (= `content.code`) + `functions/specs/<functionName>.json` (= content minus `code`). **File name = `content.functionName`** (language-idiomatic: snake_case Python), NOT `name`. `name` is the camelCase linkage key used by `md_*` ops, the spec, and agents. |
-| AgentM | `md_list`/`md_get AgentM` | `agents/<name>.json` |
+| AgentM | `md_list`/`md_get AgentM` | `agents/specs/<name>.json` (= content minus `code`) + — for **codeful/oneshot** — `agents/<snake_name>.py` (= `content.code`; file = snake_case of `name`, holds `def handle(params)` + hooks). **codeless** agents have only the spec (no `.py` — they run the platform loop). Same `.py`+spec split as functions. *(New layout: previously `agents/<name>.json` at top level — sync now writes `agents/specs/`; move any existing top-level files there manually.)* |
 
 `.sync.json` records a baseline per artifact so we can tell what changed:
 ```json
@@ -49,6 +52,8 @@ Compute `localHash` with `shasum -a 256` (Bash). For a function, hash the
 `.py` + `specs/*.json` pair (concatenated) so an edit to either counts. Key a
 function's files by its **`functionName`** (from `md_get` content) — the
 `name`↔file mapping isn't 1:1 (`name` is camelCase, `functionName` snake_case).
+A **codeful/oneshot agent** is the same `.py`+spec pair (hash both, file =
+snake_case of `name`); a **codeless agent** is just `agents/specs/<name>.json`.
 
 ## Initial pull (start of work on an app)
 
@@ -80,7 +85,10 @@ Pull only what's **newer in the DB** — auto-apply, but never lose local work:
 
 When you change a local artifact (the normal authoring flow), save it back:
 - Read the file(s); for a function, **recombine** `functions/<functionName>.py`
-  into `content.code` alongside `functions/specs/<functionName>.json`.
+  into `content.code` alongside `functions/specs/<functionName>.json`. For a
+  **codeful/oneshot agent**, recombine `agents/<snake_name>.py` into `content.code`
+  alongside `agents/specs/<name>.json` (same pattern); a **codeless** agent is just
+  the spec.
 - `md_update` (or `md_create` for a new artifact) keyed by the spec's `name`
   (camelCase linkage key — read it from `content.name`, not by re-casing the
   file's `functionName`). This bumps the server `updatedAt`. Always send both
