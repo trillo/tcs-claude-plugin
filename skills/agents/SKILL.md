@@ -128,6 +128,15 @@ the whole handler by running the hooks as real Python around the loop role-play:
 3. **`post_process`** — run as real Python with the role-played result + `state`
    (it persists via `ctx.*`).
 
+> **If the AgentM declares an `outputSchema` (B6):** the deployed pod extracts the
+> turn's structured output automatically and exposes it as `result.output`. The
+> role-play loop does **not** run that step — so when you build the role-played
+> `result`, also **produce the structured output yourself** (act as the extractor:
+> map the conversation to the `outputSchema`) and set it as `result.output` before
+> calling `post_process`. Otherwise `result.output` is `None` locally and you won't
+> exercise the handler's output-handling branch. For MockCtx unit tests, use
+> `ctx.agent.preload_output({...})`.
+
 This runs the actual hook code (the part codeful adds) while you role-play the
 loop — no agent redeploy. (This is why the hooks are factored into named
 functions.) For **oneshot**, there's no loop: just produce the structured output
