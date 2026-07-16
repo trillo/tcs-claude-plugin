@@ -54,6 +54,41 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
    Example: `name: "draftHTMLDoc"`, `functionName: "draft_html_doc"`,
    file `functions/draft_html_doc.py`.
 
+## Permitted APIs (the capability manifest)
+
+Populate **`content.capabilities`** — the platform APIs this function is allowed to
+call (shown in the Trillo AI UI as **"Permitted APIs"**). Under manifest enforcement a
+function may call only its ambient defaults **plus** what's listed here, so derive it
+by reading the `ctx.*` calls in the code you just wrote (this is why the field exists —
+Claude Code knows the calls; a heuristic can't). Two entry shapes:
+
+- **Data** — each `ctx.data.<op>("ClassName", …)` → `{ "op": "<read|create|update|
+  delete>", "className": "ClassName" }`. Map: get/list/query/count/exists → `read`;
+  create → `create`; update/upsert → `update`; delete/soft-delete → `delete`. One
+  entry per (op, class). **List every data class the code touches** — there is no
+  ambient data for function code.
+- **Platform** — `ctx.email` / `ctx.sms` / `ctx.files` / `ctx.um` / `ctx.audit` /
+  `ctx.secret` / … → `{ "method": "POST", "path": "/api/v2.0/…" }`, the REST endpoint
+  that `ctx.*` method calls (it's in `toolkit_stubs()` / the installed toolkit source —
+  e.g. `ctx.email.send` → `POST /api/v2.0/email/send`).
+
+**Do NOT list:** `ctx.service` (outbound HTTP to external APIs — not an AOS endpoint,
+not gated by the manifest); `ctx.llm` / `ctx.agent` / `ctx.memory` (the runtime itself);
+and **calling other functions** (`ctx.run_function`) — invoking is ambient, and the
+callee runs under its *own* manifest.
+
+An **empty `capabilities`** is correct when the code only does ambient things (calls no
+AOS data/platform APIs — e.g. pure compute, or it only calls other functions). The
+field rides the def to AOS on deploy — no extra step.
+
+```json
+"capabilities": [
+  { "op": "read", "className": "Order" },
+  { "op": "create", "className": "Shipment" },
+  { "method": "POST", "path": "/api/v2.0/email/send" }
+]
+```
+
 ## Test locally first (offline, MockCtx — fast, no deploy)
 
 Run logic tests in seconds with the toolkit's `MockCtx`. **Default-on: do this

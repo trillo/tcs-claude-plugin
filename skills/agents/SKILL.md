@@ -43,6 +43,42 @@ Don't guess the API.
    agent needs a function-tool that doesn't exist yet, add it via **functions**
    first.
 
+## Permitted APIs (the capability manifest)
+
+Populate **`content.capabilities`** — the platform APIs this agent is allowed to call
+(shown in the Trillo AI UI as **"Permitted APIs"**). Under manifest enforcement the
+agent may call only its ambient defaults **plus** what's listed here, and — unlike
+functions — an agent acts through **two** channels, so derive from both:
+
+- **The agent's bound `tools`** (agents call these via MCP, which is gated):
+  - **data tools** (`data_get`/`data_list`/`data_query`/`data_create`/`data_update`/
+    `data_delete`, or the `data_*` glob) → `{ "op": "<read|create|update|delete>",
+    "className": "…" }` for **each class the agent operates on** (from its spec /
+    instructions). read = get/list/query/count/exists; create; update = update/upsert;
+    delete.
+  - **platform tools** (`email`, `sms`, `file_*`, `knowledge_*`, `drive_*`, …) →
+    `{ "method": "POST", "path": "/api/v2.0/…" }`, the endpoint the tool maps to
+    (in `toolkit_stubs()` / the toolkit source).
+- **The handler's `ctx.*` calls** (codeful / oneshot only) — same rules as a function:
+  data → `{op, className}`, platform → `{method, path}`.
+
+**Do NOT list:** `fn:*` / function-name tools and `call_agent` — invoking a
+function/agent is ambient, and the callee runs under its *own* manifest; discovery
+tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.memory`
+(the agent runtime itself). De-dupe the combined list.
+
+An **empty `capabilities`** is correct for an agent that only orchestrates ambient
+things (converses, calls functions/other agents, own conversation state). It rides the
+def to AOS on deploy — no extra step.
+
+```json
+"capabilities": [
+  { "op": "read", "className": "Listing" },
+  { "op": "create", "className": "Inquiry" },
+  { "method": "POST", "path": "/api/v2.0/email/send" }
+]
+```
+
 ## Test locally first (codeful / oneshot — offline, MockCtx)
 
 Before deploying, unit-test the handler **logic** in seconds with `MockCtx` —
