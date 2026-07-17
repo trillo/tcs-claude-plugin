@@ -96,7 +96,20 @@ no pod, no model (mirrors the functions step). codeless agents skip this (no cod
     test_coded_agent_example.py}`.)
   - **oneshot** → `ctx.llm.preload({...})`; assert the handler persists/returns it
     (a function-style test).
+  - **orchestrator/router** (a codeful agent that routes to sub-agents via
+    `ctx.run_agent`) → `ctx.preload_agent("<subAgent>", {"response": "...",
+    "output": {...}})`, run the handler, assert on `ctx.run_agent_calls` (which
+    specialist got which query).
   - Handlers are `async` → call with `asyncio.run(handle(params))`.
+
+> **Orchestrator → specialist routing** ("chief of staff" — one front-door agent routes a
+> user's query to the right specialist by intent, single thread). Very common once an app
+> spans domains. Two ways: a **codeless** orchestrator whose instructions list the roster
+> (specialists + purpose) and let the LLM call `run_agent(agentName, query)` autonomously
+> (the default), or a **codeful** orchestrator that classifies intent and routes in code via
+> `ctx.run_agent(name, params)`. Make specialists **codeful** so they keep their own context
+> across turns. Full guide + both examples:
+> [Agents → Orchestrator → specialist routing](../../../trillo-ai-aos-docs/content/04-developer-guide/03-agents.md#orchestrator--specialist-routing-chief-of-staff).
 - **Run:** `pytest agents/tests/test_<snake_name>.py` (offline). Fix the `.py`,
   re-run — seconds, no deploy.
 
