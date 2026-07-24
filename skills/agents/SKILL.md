@@ -64,8 +64,14 @@ functions — an agent acts through **two** channels, so derive from both:
 
 **Do NOT list:** `fn:*` / function-name tools and `call_agent` — invoking a
 function/agent is ambient, and the callee runs under its *own* manifest; discovery
-tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.memory`
-(the agent runtime itself). De-dupe the combined list.
+tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.memory` /
+`ctx.task` (the agent runtime + the ambient task-log primitive). De-dupe the combined list.
+
+**Logging/progress:** in a codeful/oneshot handler use `ctx.task.log("…")`
+(`.info/.warn/.error`) — console + a durable `TaskEvent` on the turn's task, **auto-tagged
+with the `conversationId`** so the whole conversation is traceable at
+`GET /api/v2.0/tasks/events?conversationId=<cid>`. Don't use `ctx.audit.log` for tracing
+(separate compliance trail, not in the task stream).
 
 An **empty `capabilities`** is correct for an agent that only orchestrates ambient
 things (converses, calls functions/other agents, own conversation state). It rides the

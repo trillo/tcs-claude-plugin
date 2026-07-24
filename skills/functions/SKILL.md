@@ -34,6 +34,12 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
    `key = ctx.secret.get("stripeApiKey"); ctx.service.post(url,
    headers={"Authorization": f"Bearer {key}"}, json=…)`. Don't import `httpx`
    directly, and never read `AppSecret`/`ExternalService` via `ctx.data`.
+   **Logging/progress:** use `ctx.task.log("…")` (`.info/.warn/.error`) — console + a
+   durable per-task `TaskEvent` (auto-tagged with the conversation for agents). Do **not**
+   use `ctx.audit.log` for tracing — that's a separate compliance trail, not in the task
+   stream. And in a **sync** function do **not** also `print()` the same lines: sync
+   `Result.logs` merges captured `print()` with the `ctx.task.log` buffer, so logging both
+   ways duplicates each line — pick `ctx.task.log`.
 3. Ground on the model: `md_get SoftwareSpec`, `md_list ClassM` (custom +
    system entities).
 4. Write each function — spec **and** Python:
@@ -74,8 +80,8 @@ Claude Code knows the calls; a heuristic can't). Two entry shapes:
 
 **Do NOT list:** `ctx.service` (outbound HTTP to external APIs — not an AOS endpoint,
 not gated by the manifest); `ctx.llm` / `ctx.agent` / `ctx.memory` (the runtime itself);
-and **calling other functions** (`ctx.run_function`) — invoking is ambient, and the
-callee runs under its *own* manifest.
+`ctx.task` (a task-log primitive — ambient); and **calling other functions**
+(`ctx.run_function`) — invoking is ambient, and the callee runs under its *own* manifest.
 
 An **empty `capabilities`** is correct when the code only does ambient things (calls no
 AOS data/platform APIs — e.g. pure compute, or it only calls other functions). The
