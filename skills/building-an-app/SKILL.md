@@ -1,5 +1,5 @@
 ---
-description: Drives building a Trillo AOS app step by step (Input → SoftwareSpec → EntityModel → Functions → Agents → UIScenario → deploy). Use whenever the user wants to build, continue, or resume a Trillo app, asks "what do I do next", or right after an app is selected. Checks app_status, runs the current step, and asks before advancing.
+description: Drives building a Trillo AOS app step by step (Input → SoftwareSpec → EntityModel → Functions → Agents → UIScenario → deploy) and the post-deploy loop (seed/test/verify/configure). Use whenever the user wants to build, continue, resume, or exercise a Trillo app, asks "what do I do next", or right after an app is selected. Checks app_status, runs the current step, and asks before advancing.
 ---
 
 # Building a Trillo AOS app — the development process
@@ -42,7 +42,8 @@ forcing it.
 2. Call **`app_status`** → `{activities:[{name, status, statusInfo}], nextActivity, deployStatus}`.
 3. Briefly tell the user where things stand — a short checklist:
    `COMPLETED ✓ · READY (do next) · NOT_READY (blocked — statusInfo says on what)` —
-   and what `nextActivity` is.
+   and what `nextActivity` is. If `deployStatus` is `deployed` (so `nextActivity` is
+   null), surface the `postDeploy` suggestions instead — see **After deploy**.
 
 ## Running a step
 
@@ -61,6 +62,25 @@ For the current step (`nextActivity`) or a step the user names:
      `md_create` per item, `md_update` to edit one
 4. **End of step:** summarize what was produced, then **ASK before moving to
    the next step.** Do not auto-run the whole chain.
+
+## After deploy — the app is live, keep guiding
+
+Once `app_status` shows `deployStatus: "deployed"`, the authoring chain is done
+(`nextActivity` is null) and the response carries a **`postDeploy`** list — suggested
+next actions tailored to what the app has, each `{action, tool, why}`. Surface them and
+offer to run each. These are **optional and app-specific** (not a mandatory chain) — let
+the user pick what's relevant:
+
+- **Seed & inspect data** — `data_seed` / `data_query` (query as a role to test access control).
+- **Test functions** — `function_test_sync`.
+- **Set secrets** — `secret_set`, for any API keys the functions need.
+- **Verify agents** — `agent_invoke`.
+- **Ingest knowledge** — `knowledge_ingest`, if agents use retrieval.
+- **Anything else** — `aos_call` reaches any app API.
+
+Render it like the pre-deploy checklist — "Deployed ✓ — here's what you can do now" —
+then do what the user asks. All of this runs against the **dev** app and needs
+`deployStatus == "deployed"`.
 
 ## Per-step skills
 
@@ -86,5 +106,5 @@ plainly rather than faking it, and — with their OK — file it via
 ## Guardrails
 
 - Authoring is **dev only** — prod is locked server-side.
-- DB seeding / function testing need the app **deployed** (`deployStatus ==
-  "deployed"`); do those after `deploy`.
+- DB seeding, function/agent testing, and secrets need the app **deployed**
+  (`deployStatus == "deployed"`) — do those after `deploy`; see **After deploy**.
