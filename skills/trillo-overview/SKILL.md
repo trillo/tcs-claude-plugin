@@ -56,7 +56,7 @@ Tier 0 tools are always available: `app_list`, `app_select`, `app_create`,
 prompt + output schema for an authoring step), `aos_capabilities` (the
 platform coverage map), `toolkit_stubs` (the `aos_toolkit` API for function
 code), `md_list_model_classes`, `discovery_list_groups`,
-`discovery_load_group`, `discovery_list_skills`, `task_events`.
+`discovery_load_group`, `task_events`.
 
 To build an app step by step, use the **building-an-app** skill — it drives
 Input → SoftwareSpec → EntityModel → Functions → Agents → UIScenario → deploy
@@ -95,4 +95,4 @@ Trillo UI workflow, enforced server-side — don't attempt prod mutations.
 `app_list` → `app_select`/`app_create` → write `.trillo/session.json` → pull the
 app's artifacts to the local workspace (**workspace** skill) → author the
 spec/entities/functions (`md-crud`) → `deploy` → poll `task_events` → test
-(`activities`). Run `discovery_list_skills` to find deeper guides as they ship.
+(`activities`).
