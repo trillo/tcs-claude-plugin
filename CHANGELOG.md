@@ -5,7 +5,7 @@ items before your next session so nothing surprises you.
 
 ---
 
-## 2026-07-30 — Tool cleanup + new dev-time tools
+## 2026-07-30 — Tool cleanup + new dev-time tools (plugin v0.2.0)
 
 ### ⚠️ Breaking / behavior changes — read first
 
@@ -43,8 +43,23 @@ All of these are **dev-only** (enforced by the runtime) and require the app to b
 You mostly won't call these by name — ask Claude in plain language ("set the Stripe key as a
 secret", "seed three test orders", "run the triage agent on this ticket") and it picks the tool.
 
-The model is **hybrid**: reach for a dedicated tool when one fits, and **`aos_call`** covers
-everything else the platform's API exposes — so you're never blocked waiting for a new tool to ship.
+The model is **hybrid**: reach for a dedicated tool when one fits, and **`aos_call`** is the
+catch-all for everything else the platform's API exposes — so you're never blocked waiting for a
+new tool to ship. A few concrete examples (you just ask in plain language; Claude picks the tool):
+
+- *"Set the SendGrid API key as a secret"* → the dedicated **`secret_set`** tool.
+- *"Seed three test orders, then show them back to me as the `sales` role"* → **`data_seed`** ×3,
+  then **`data_query`** with `role: "sales"` (so you also see exactly what that role is allowed to read).
+- *"Create a test user qa@acme.test with the manager role"* → there's no dedicated user tool, so Claude
+  falls back to **`aos_call`** → `POST /api/v2.0/users/provision` with the user body.
+- *"What external services are configured on this app?"* → **`aos_call`** →
+  `POST /api/v2.0/admin/external-services/list`.
+
+`aos_call` runs against your **dev** app as tenant-admin (or a role you name), so anything the app's
+REST API can do — app config, users, external services, webhooks, scheduled jobs, audit — is reachable
+even without a dedicated tool. Not sure of a path? Ask Claude to check **`aos_capabilities`** or the
+API reference first. Rule of thumb: **dedicated tool if one exists (cleaner, safer), `aos_call` for
+the long tail.**
 
 ### TL;DR
 

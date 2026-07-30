@@ -9,7 +9,7 @@
       "name": "trillo",
       "source": "./",
       "description": "Author Trillo AOS apps from Claude Code over the Trillo AI MCP server (OAuth login).",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }
