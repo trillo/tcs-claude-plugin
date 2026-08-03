@@ -70,7 +70,7 @@ tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.mem
 **Logging/progress:** in a codeful/oneshot handler use `ctx.task.log("…")`
 (`.info/.warn/.error`) — console + a durable `TaskEvent` on the turn's task, **auto-tagged
 with the `conversationId`** so the whole conversation is traceable at
-`GET /api/v2.0/tasks/events?conversationId=<cid>`. Don't use `ctx.audit.log` for tracing
+`GET /api/v2.0/tasks/<cid>/events` (the conversation id is the task id). Don't use `ctx.audit.log` for tracing
 (separate compliance trail, not in the task stream).
 
 An **empty `capabilities`** is correct for an agent that only orchestrates ambient

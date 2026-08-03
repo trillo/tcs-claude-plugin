@@ -34,7 +34,7 @@ hand-rolled `curl`:
 |---|---|
 | **`aos_call`** | Call **any** deployed-app REST API (as tenant-admin or a chosen role). The general-purpose way to do anything without a dedicated tool. |
 | **`secret_set`** / **`secret_list`** | Set an encrypted secret (so functions that call third-party APIs can run) / list secret names + metadata. Values are write-only — never returned. |
-| **`data_seed`** / **`data_query`** | Create / query records, as tenant-admin **or a given role**. Query as a limited role to verify what it can and can't see (access-control testing). |
+| **`data_seed`** / **`data_query`** | Create / query records, as tenant-admin **or a given role** (runs as that role's identity). *Note: class `acl` isn't yet enforced for role tokens on the direct data API, so this doesn't prove the role's permissions.* |
 | **`agent_invoke`** | Run a deployed agent and get its reply (waits briefly, else returns a handle to fetch the reply later). |
 | **`knowledge_ingest`** | Load a text document into a knowledge container for RAG. |
 
