@@ -5,6 +5,31 @@ items before your next session so nothing surprises you.
 
 ---
 
+## 2026-08-05 — Toolkit installs via pip; new `toolkit_status` (plugin v0.3.0)
+
+### ⚠️ Breaking / behavior changes — read first
+
+1. **`toolkit_install` and `toolkit_stubs` are gone.** The `aos_toolkit` SDK now ships as a
+   **versioned wheel on its public GitHub release**, so you install it with `pip` instead of
+   fetching it over MCP (the old replies exceeded the MCP response cap). Run the new
+   **`toolkit_status`** tool for the exact command — it reports the toolkit version this platform
+   build deploys plus a `pip install "aos-toolkit[test] @ <release-wheel-url>"` to run in a venv.
+   Ground function/agent code on the **installed** toolkit (its typed stubs come with it).
+   - *Needs the Trillo AI server redeployed with `toolkit_status`; reconnect `/mcp` and restart
+     Claude Code afterward so the refreshed tool list loads.*
+
+### Other
+
+- **`toolkit_status`** (new) — one call returning the deployed toolkit version, the install command,
+  and how to check your local install, so you can spot and fix version drift.
+- Task-event tracing URL corrected to `GET /api/v2.0/tasks/{taskId}/events` (for an agent, the task
+  id *is* the conversation id).
+- `data_seed` / `data_query` "as a role" note clarified: class-level `acl` is **not** enforced for a
+  role token on the direct data API, so seeding/querying as a role does not verify that role's
+  permissions.
+
+---
+
 ## 2026-07-30 — Tool cleanup + new dev-time tools (plugin v0.2.0)
 
 ### ⚠️ Breaking / behavior changes — read first
