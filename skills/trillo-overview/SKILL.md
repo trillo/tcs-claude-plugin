@@ -54,8 +54,8 @@ scope its work. (In Trillo, an "app" is identified by this appId.)
 Tier 0 tools are always available: `app_list`, `app_select`, `app_create`,
 `app_status` (what's done / what's next for an app), `step_guide` (the live
 prompt + output schema for an authoring step), `aos_capabilities` (the
-platform coverage map), `toolkit_stubs` (the `aos_toolkit` API for function
-code), `md_list_model_classes`, `discovery_list_groups`,
+platform coverage map), `toolkit_status` (the `aos_toolkit` version this build
+deploys + how to install it), `md_list_model_classes`, `discovery_list_groups`,
 `discovery_load_group`, `task_events`.
 
 To build an app step by step, use the **building-an-app** skill — it drives

@@ -14,7 +14,8 @@ Ground yourself with **`aos_capabilities`** (the coverage map — each capabilit
 is tagged *In place / Partial / Gap*, numbered, with a *"What's needed"* note).
 If the requirement maps to a **Gap** (or something not covered at all), it's a
 candidate. Note the two dimensions:
-- `toolkit_stubs` covers what a **function** can do from code (data/files/…).
+- the `aos_toolkit` (installed; version via `toolkit_status`) covers what a
+  **function** can do from code (data/files/…).
 - the coverage map covers **platform/runtime** capabilities (triggers,
   webhooks, integrations) — these are the ones a function can't just call.
 

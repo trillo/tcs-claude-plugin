@@ -17,16 +17,17 @@ and — for coded agents — generates and tests the Python handler. Depends on
 
 Handler code follows the canonical contract — read
 `trillo-aos/docs/coded-agent-handler-contract.md` (the scaffolds per kind) and
-ground every `ctx.*` call on `toolkit_stubs()` (now includes `ctx.llm`/`ctx.agent`).
+ground every `ctx.*` call on the installed `aos_toolkit` (now includes `ctx.llm`/`ctx.agent`).
 Don't guess the API.
 
 ## Generate
 
 1. `step_guide({step:"Agents"})` → prompt + `expectedOutputSchema` (carries
    `kind`) + `systemClasses`.
-2. **`toolkit_stubs()`** → the typed `aos_toolkit` API incl. `ctx.agent`
+2. **Ground on the installed `aos_toolkit`** typed API incl. `ctx.agent`
    (`setup`/`execute`/`state`/`render`) and `ctx.llm`
-   (`generate`/`process_document`). Ground handler code on these.
+   (`generate`/`process_document`) — run **`toolkit_status()`** to install it if
+   needed. Ground handler code on these.
 3. Ground: `md_get SoftwareSpec` (its `aiAgents` section), `md_list FunctionM`
    (the tools an agent can use), `md_list ClassM`.
 4. Write each agent (camelCase `name`, snake_case file), **by kind**:
@@ -58,7 +59,7 @@ functions — an agent acts through **two** channels, so derive from both:
     delete.
   - **platform tools** (`email`, `sms`, `file_*`, `knowledge_*`, `drive_*`, …) →
     `{ "method": "POST", "path": "/api/v2.0/…" }`, the endpoint the tool maps to
-    (in `toolkit_stubs()` / the toolkit source).
+    (in the installed `aos_toolkit` source).
 - **The handler's `ctx.*` calls** (codeful / oneshot only) — same rules as a function:
   data → `{op, className}`, platform → `{method, path}`.
 
@@ -90,8 +91,9 @@ def to AOS on deploy — no extra step.
 Before deploying, unit-test the handler **logic** in seconds with `MockCtx` —
 no pod, no model (mirrors the functions step). codeless agents skip this (no code).
 
-- One-time: install the toolkit (`toolkit_install()` → write files + `pip install
-  -e ".trillo/toolkit[test]"`) — gives `aos_toolkit` + `aos_toolkit_mock` + pytest.
+- One-time: install the toolkit — run `toolkit_status()` and `pip install` the
+  wheel it points at (`pip install "aos-toolkit[test] @ <url>"`, into a venv) —
+  gives `aos_toolkit` + `aos_toolkit_mock` + pytest.
 - Create `agents/conftest.py` if missing — the `ctx` fixture that swaps a fresh
   `MockCtx` into the handler module (same shape as `functions/conftest.py`).
 - Write `agents/tests/test_<snake_name>.py`. `MockCtx` mocks the loop + LLM:

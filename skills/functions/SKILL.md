@@ -24,9 +24,10 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 
 1. `step_guide({step:"Functions"})` → prompt + `expectedOutputSchema` +
    `systemClasses` + a toolkit note.
-2. **`toolkit_stubs()`** → the typed `aos_toolkit` API (`data`, `files`,
+2. **Ground on the installed `aos_toolkit`** typed API (`data`, `files`,
    `email`, `sms`, `um`, `audit`, `responses`, `memory`, `service` for outbound
-   HTTP, `secret` to read app credentials). Send SMS with `ctx.sms.send(to, body)`
+   HTTP, `secret` to read app credentials) — run **`toolkit_status()`** to install
+   or re-align the toolkit first (setup below). Send SMS with `ctx.sms.send(to, body)`
    or `ctx.sms.send_template(to, name, variables)` (E.164 numbers). **Ground all code on these signatures — do
    not guess the API.** For an **external integration** (Stripe, Gusto, …): read
    the key with `ctx.secret.get("…")` and call the API with `ctx.service`
@@ -75,7 +76,7 @@ Claude Code knows the calls; a heuristic can't). Two entry shapes:
   ambient data for function code.
 - **Platform** — `ctx.email` / `ctx.sms` / `ctx.files` / `ctx.um` / `ctx.audit` /
   `ctx.secret` / … → `{ "method": "POST", "path": "/api/v2.0/…" }`, the REST endpoint
-  that `ctx.*` method calls (it's in `toolkit_stubs()` / the installed toolkit source —
+  that `ctx.*` method calls (it's in the installed `aos_toolkit` source —
   e.g. `ctx.email.send` → `POST /api/v2.0/email/send`).
 
 **Do NOT list:** `ctx.service` (outbound HTTP to external APIs — not an AOS endpoint,
@@ -102,13 +103,15 @@ before deploying.** These are *logic* tests against mocked AOS — they catch mo
 bugs in seconds; the deployed test (next section) is the integration truth.
 
 **One-time workspace setup:**
-- **Install the toolkit** — it isn't on PyPI, so fetch it from the platform:
-  `toolkit_install()` returns `{files, packageDir, installCmd}`. Write each
-  `files` entry to `<packageDir>/<relativePath>` (default `.trillo/toolkit/`),
-  then run its `installCmd` (`pip install -e ".trillo/toolkit[test]"`). That
-  provides `aos_toolkit` + `aos_toolkit_mock` (MockCtx) + pytest. Do this once
-  per workspace (skip if `aos_toolkit` already imports). The user owns the
-  toolkit; don't modify the installed files.
+- **Install the toolkit** — run `toolkit_status()`; it returns the `pip install`
+  command for the `aos_toolkit` version this build deploys (a wheel from the
+  toolkit's public GitHub release) plus `checkLocalCmd` to see what's installed.
+  Install into a venv: `pip install "aos-toolkit[test] @ <url from toolkit_status>"`.
+  That provides `aos_toolkit` + `aos_toolkit_mock` (MockCtx) + pytest + the typed
+  stubs. Do this once per workspace (skip if `aos_toolkit` already imports at that
+  version); if it drifts from the deployed platform, `toolkit_status` shows both
+  versions and the re-align command. The user owns the toolkit; don't modify the
+  installed files.
 - If `.trillo/<appId>/functions/conftest.py` is missing, create it — it supplies
   the `ctx` fixture and puts the functions dir on `sys.path`:
 
