@@ -106,7 +106,9 @@ bugs in seconds; the deployed test (next section) is the integration truth.
 - **Install the toolkit** — run `toolkit_status()`; it returns the `pip install`
   command for the `aos_toolkit` version this build deploys (a wheel from the
   toolkit's public GitHub release) plus `checkLocalCmd` to see what's installed.
-  Install into a venv: `pip install "aos-toolkit[test] @ <url from toolkit_status>"`.
+  Install into a venv — the toolkit needs **Python 3.11+**, so if `python3 --version`
+  is older (macOS ships 3.9) build the venv with `python3.11` (`brew install python@3.11`):
+  `pip install "aos-toolkit[test] @ <url from toolkit_status>"`.
   That provides `aos_toolkit` + `aos_toolkit_mock` (MockCtx) + pytest + the typed
   stubs. Do this once per workspace (skip if `aos_toolkit` already imports at that
   version); if it drifts from the deployed platform, `toolkit_status` shows both
