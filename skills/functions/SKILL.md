@@ -85,6 +85,14 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 > `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/23-files-and-folders.md`
 > (sharing is a separate topic: `…/11-file-sharing.md`).
 
+> **Managing users? Mind the admin split.** `ctx.um` is **admin-only** except two
+> methods a non-admin function may call: **`provision_user`** (create a user on the
+> caller's behalf) and **`generate_access_link`** (passwordless sign-in link —
+> declare it `grantable:privileged` and never on a guest path). Everything else
+> (`add_user`, `update_roles`, `invite_user`, …) needs admin or returns
+> `AOSPermissionDenied`. Full guide — fetch
+> `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/24-user-management.md`.
+
 ## Permitted APIs (the capability manifest)
 
 Populate **`content.capabilities`** — the platform APIs this function is allowed to
