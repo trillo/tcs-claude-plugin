@@ -1,6 +1,6 @@
 {
   "name": "trillo",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Author Trillo AOS apps from Claude Code: OAuth login to Trillo AI, then discover/create apps, generate functions/entities/agents, and deploy — all over one MCP server.",
   "author": {
     "name": "Trillo Inc",

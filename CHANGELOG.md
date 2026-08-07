@@ -5,6 +5,27 @@ items before your next session so nothing surprises you.
 
 ---
 
+## 2026-08-08 — New `scenario-to-a2ui` skill + skill-guidance fixes (plugin v0.4.0)
+
+### New
+
+- **`scenario-to-a2ui`** skill — author adaptive-UI screens from a scenario: `UIView`/`UIFlow` via
+  `md_*` (A2UISpec + Direct-API actions + `bindings`), `newFunctions[]` for backend gaps, and a
+  per-role sidebar. Distinct from the `ui-scenario` step (which only *defines* scenarios).
+
+### Skill-guidance fixes (behavior, read if you author functions/agents)
+
+- **Agents** — the sub-agent tool is **`run_agent`**, not `call_agent` (binding `call_agent` is
+  silently ignored). **`responseSchema` is a Gemini `Schema`, not JSON Schema** — express nullable as
+  `{"type":"string","nullable":true}`, not a `["string","null"]` union. Added `capabilities`
+  ("Permitted APIs") derivation guidance, rewired doc refs to the content API, and `ctx.task.log`
+  logging notes.
+- **Functions** — the toolkit needs **Python 3.11+** (use `python3.11` on macOS); pointers to the
+  user-management and files-and-folders developer guides.
+- **Entity model** — assorted doc corrections.
+
+---
+
 ## 2026-08-05 — Toolkit installs via pip; new `toolkit_status` (plugin v0.3.0)
 
 ### ⚠️ Breaking / behavior changes — read first
