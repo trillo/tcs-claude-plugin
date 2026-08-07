@@ -13,7 +13,10 @@ and — for coded agents — generates and tests the Python handler. Depends on
 - **codeful** — needs imperative pre/post logic around the loop: a Python handler
   with `boot`/`restore`/`post_process` hooks + a thin `handle`.
 - **oneshot** — a single-shot document/data processor: one `ctx.llm` call, no loop,
-  no conversation. Runs **like a function**.
+  no conversation. Runs **like a function**. May be **code-free** — a declarative
+  `oneshot` (inline `prompt` + `responseSchema` + `model`, no handler) is run by the
+  platform's built-in one-shot handler; add a `.py` handler only when the shot needs
+  custom pre/post logic (resolve which file to read, post-persist the result, etc.).
 
 Handler code follows the canonical contract — read
 `trillo-aos/docs/coded-agent-handler-contract.md` (the scaffolds per kind) and
@@ -34,8 +37,12 @@ Don't guess the API.
    - **codeless** → spec only: `agents/specs/<name>.json` + `md_create
      modelClassName="AgentM" name="<agent>" content={name, kind:"codeless",
      instructions, tools, ...}`. No `.py`.
-   - **oneshot** → handler `agents/<snake_name>.py` (the `oneshot` scaffold —
-     one `ctx.llm.process_document(agent=...)` call) + spec + `md_create
+   - **oneshot** → two forms. **Code-free (default when no imperative logic is
+     needed):** spec only — `md_create content={..., kind:"oneshot", instructions,
+     responseSchema, model}`, no `.py`, no `code`/`handlerName`; the platform's
+     built-in handler runs the single shot. **With a handler (custom pre/post
+     logic):** `agents/<snake_name>.py` (the `oneshot` scaffold — one
+     `await ctx.llm.process_document(agent=...)` call) + spec + `md_create
      content={..., kind:"oneshot", code, handlerName:"handle", responseSchema}`.
    - **codeful** → handler `agents/<snake_name>.py` (the **factored** scaffold:
      `boot`/`restore`/`post_process` + `handle`) + spec + `md_create
@@ -43,6 +50,17 @@ Don't guess the API.
    The spec is `content` **minus** `code`; the `.py` is `content.code`. If an
    agent needs a function-tool that doesn't exist yet, add it via **functions**
    first.
+
+> **`responseSchema` is a Gemini `Schema`, not JSON Schema.** Express a nullable
+> field as a single `type` plus `"nullable": true` (e.g.
+> `{"type": "string", "nullable": true}`) — the Gemini form, not a JSON-Schema
+> `{"type": ["string", "null"]}` union. `enum` and `format` also follow the Gemini
+> dialect. Applies wherever you pass `responseSchema` (oneshot agents and `ctx.llm`).
+
+> **`ctx.llm` is awaitable.** `ctx.llm.generate` / `process_document` /
+> `process_documents` are `async` — a oneshot handler must `await` them (agent
+> handlers are already `async def`). A missing `await` returns a coroutine that
+> fails later with a misleading error about the model's output.
 
 ## Permitted APIs (the capability manifest)
 
@@ -63,10 +81,16 @@ functions — an agent acts through **two** channels, so derive from both:
 - **The handler's `ctx.*` calls** (codeful / oneshot only) — same rules as a function:
   data → `{op, className}`, platform → `{method, path}`.
 
-**Do NOT list:** `fn:*` / function-name tools and `call_agent` — invoking a
+**Do NOT list:** `fn:*` / function-name tools and `run_agent` — invoking a
 function/agent is ambient, and the callee runs under its *own* manifest; discovery
 tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.memory` /
 `ctx.task` (the agent runtime + the ambient task-log primitive). De-dupe the combined list.
+
+> **The sub-agent tool is `run_agent`** — one name, not `call_agent`. The runtime
+> supplies it **ambiently**, so an orchestrator calls `run_agent(agentName, query)`
+> (or `ctx.run_agent(name, params)` in code) **without binding it** in `tools` or
+> `capabilities`. Binding a name like `call_agent` neither errors nor helps — it is
+> silently ignored, and the mistake only shows up in the task-event trace.
 
 **Logging/progress:** in a codeful/oneshot handler use `ctx.task.log("…")`
 (`.info/.warn/.error`) — console + a durable `TaskEvent` on the turn's task, **auto-tagged

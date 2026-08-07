@@ -61,6 +61,22 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
    Example: `name: "draftHTMLDoc"`, `functionName: "draft_html_doc"`,
    file `functions/draft_html_doc.py`.
 
+> **One-shot LLM from a function must be `async` + `await`ed.** A function can call
+> `ctx.llm.*` (`generate` / `process_document`) for single-shot document/data
+> processing — these are `async`, so the handler must be `async def handler(...)`
+> and `await` the call. A missing `await` does **not** raise at the call site; it
+> returns a coroutine that fails downstream with a misleading error about the
+> model's output. (`ctx.llm` is the runtime — don't list it in `capabilities`.)
+
+> **Sandbox imports are allowlisted.** Function code may import only:
+> `json, datetime, math, re, collections, itertools, functools, hashlib, base64,
+> uuid, time, typing, asyncio, httpx, csv, secrets, random, string, decimal, hmac,
+> io, os, urllib` (plus `aos_toolkit`). Anything else — `inspect`, `requests`,
+> `pandas`, `numpy`, … — raises `Importing module '<x>' is restricted` at runtime.
+> Notably **`datetime` is available**, so do date/time math with it (no need to
+> hand-roll epoch conversions); use `ctx.service` (httpx) for outbound HTTP, never
+> `requests`. `exec`/`eval`/`compile`/`__import__` are also blocked.
+
 ## Permitted APIs (the capability manifest)
 
 Populate **`content.capabilities`** — the platform APIs this function is allowed to

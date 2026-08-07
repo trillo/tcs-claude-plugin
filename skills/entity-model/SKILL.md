@@ -35,7 +35,7 @@ AgentConversation, AgentMemory, AgentMessage, ApiClient, AppConfig,
 AppMDCollection, AppRole, AppSecret, Application, AuditLog, BillingAccount,
 CodeGenRequest, Conversation, ConversationMessage, Email, EmailContact,
 EmailTemplate, EmailUsage, ExternalInterface, ExternalService, File2,
-FileContent, FileRawData, FileToUser, Folder, FolderToUser, Group, GroupToUser,
+FileContent, FileRawData, Folder, Group, GroupToUser,
 HostedApp, Invitation, KnowledgeContainer, KnowledgeNode, MessagePair,
 MetadataApiKey, OAuthAuthCode, OAuthFlowSession, OAuthProvider,
 OAuthRefreshToken, Prompt, RateCard, RecordShare, Secret, SentEmail, Task,
@@ -43,6 +43,11 @@ TaskEvent, TaskQueue, Template, Tenant, TestData, TestLastInput, TrilloMD,
 TrilloMDArchive, TrilloMDVersion, User, UserPreference, UserToAppRoleToTenant,
 UserToTenant, UserToToken, VerificationToken, Workflow
 ```
+
+Only `File2` carries the `2` suffix — the file/folder classes are otherwise
+unsuffixed (`Folder`, `FileContent`, `FileRawData`); there is no `Folder2` or
+`FileContent2`, so don't infer one by analogy. (The per-user file/folder join is
+`RecordShare`, not a `*ToUser` class.)
 
 Matching is **case-insensitive** — `task`, `Task`, `TASK` all collide. When the
 SoftwareSpec names an entity that hits this list, rename it (and update every
