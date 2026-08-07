@@ -18,10 +18,11 @@ and — for coded agents — generates and tests the Python handler. Depends on
   platform's built-in one-shot handler; add a `.py` handler only when the shot needs
   custom pre/post logic (resolve which file to read, post-persist the result, etc.).
 
-Handler code follows the canonical contract — read
-`trillo-aos/docs/coded-agent-handler-contract.md` (the scaffolds per kind) and
-ground every `ctx.*` call on the installed `aos_toolkit` (now includes `ctx.llm`/`ctx.agent`).
-Don't guess the API.
+Handler code follows the canonical contract — the `handle(params)` entrypoint, the `params` it
+receives, the `setup()`/`execute()` pair, `result.stop_reason`/`result.output`, and the per-kind
+scaffolds are all in the **Agents** reference (fetch
+`https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/04-agents.md`). Ground every `ctx.*`
+call on the installed `aos_toolkit` (now includes `ctx.llm`/`ctx.agent`). Don't guess the API.
 
 ## Generate
 
@@ -86,11 +87,14 @@ function/agent is ambient, and the callee runs under its *own* manifest; discove
 tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.memory` /
 `ctx.task` (the agent runtime + the ambient task-log primitive). De-dupe the combined list.
 
-> **The sub-agent tool is `run_agent`** — one name, not `call_agent`. The runtime
-> supplies it **ambiently**, so an orchestrator calls `run_agent(agentName, query)`
-> (or `ctx.run_agent(name, params)` in code) **without binding it** in `tools` or
-> `capabilities`. Binding a name like `call_agent` neither errors nor helps — it is
-> silently ignored, and the mistake only shows up in the task-event trace.
+> **In-app sub-agent delegation is `run_agent`, and it's ambient.** The runtime
+> supplies `run_agent(agentName, query)` (or `ctx.run_agent(name, params)` in code)
+> for delegating to another agent **in this app**, so never bind it in `tools` or
+> `capabilities` — binding it is silently ignored and the mistake only shows up in
+> the task-event trace. Note `call_agent` is a **different** tool, for an
+> **external / cross-app** agent (`run_* = same app, in-process; call_* = external`)
+> — don't reach for `call_agent` for in-app routing, and don't list either in
+> `capabilities`.
 
 **Logging/progress:** in a codeful/oneshot handler use `ctx.task.log("…")`
 (`.info/.warn/.error`) — console + a durable `TaskEvent` on the turn's task, **auto-tagged
@@ -123,9 +127,9 @@ no pod, no model (mirrors the functions step). codeless agents skip this (no cod
 - Write `agents/tests/test_<snake_name>.py`. `MockCtx` mocks the loop + LLM:
   - **codeful** → drive the hooks: `ctx.agent.preload_result(
     stop_reason="completed"|"incomplete")` to exercise branches; assert on the
-    result, `ctx.agent.state`, and recorded calls. (Worked example:
-    `tcs-metadata/python/aos_toolkit/examples/{coded_agent_example.py,
-    test_coded_agent_example.py}`.)
+    result, `ctx.agent.state`, and recorded calls. (Worked handler + test example in
+    the testing reference:
+    `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/22-agent-testing.md`.)
   - **oneshot** → `ctx.llm.preload({...})`; assert the handler persists/returns it
     (a function-style test).
   - **orchestrator/router** (a codeful agent that routes to sub-agents via
@@ -140,8 +144,9 @@ no pod, no model (mirrors the functions step). codeless agents skip this (no cod
 > (specialists + purpose) and let the LLM call `run_agent(agentName, query)` autonomously
 > (the default), or a **codeful** orchestrator that classifies intent and routes in code via
 > `ctx.run_agent(name, params)`. Make specialists **codeful** so they keep their own context
-> across turns. Full guide + both examples:
-> [Agents → Orchestrator → specialist routing](../../../trillo-ai-aos-docs/content/04-developer-guide/03-agents.md#orchestrator--specialist-routing-chief-of-staff).
+> across turns. Full guide (fetch the **Agents** reference):
+> `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/04-agents.md` →
+> "Orchestrator → specialist routing".
 - **Run:** `pytest agents/tests/test_<snake_name>.py` (offline). Fix the `.py`,
   re-run — seconds, no deploy.
 
@@ -223,6 +228,7 @@ loop — no agent redeploy. (This is why the hooks are factored into named
 functions.) For **oneshot**, there's no loop: just produce the structured output
 for the `ctx.llm` call (or use the MockCtx test above).
 
-> **Testing layers** (full detail in `trillo-aos/docs/agent-testing-guide.md`):
+> **Testing layers** (full detail — fetch the testing reference:
+> `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/22-agent-testing.md`):
 > (1) MockCtx unit (above) → (2) role-play (here) → (3) local-pod fidelity
 > (future) → (4) deployed `agent-test`. Layers 1–2 need no agent redeploy.
