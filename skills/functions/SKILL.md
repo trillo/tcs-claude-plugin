@@ -77,6 +77,14 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 > hand-roll epoch conversions); use `ctx.service` (httpx) for outbound HTTP, never
 > `requests`. `exec`/`eval`/`compile`/`__import__` are also blocked.
 
+> **Storing files? Read the file API first.** `ctx.files` has nine methods and **two
+> upload paths** that are easy to get wrong: create a **folder first**, then either
+> (A) `upload_url` → PUT the bytes → `upload_succeeded` (**finalize required**) for
+> large/binary files, or (B) `save_content`/`get_content` (immediate, no finalize)
+> for small text/JSON/CSV. Full guide — fetch
+> `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/23-files-and-folders.md`
+> (sharing is a separate topic: `…/11-file-sharing.md`).
+
 ## Permitted APIs (the capability manifest)
 
 Populate **`content.capabilities`** — the platform APIs this function is allowed to
