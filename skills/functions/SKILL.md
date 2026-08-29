@@ -25,8 +25,10 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 1. `step_guide({step:"Functions"})` → prompt + `expectedOutputSchema` +
    `systemClasses` + a toolkit note.
 2. **Ground on the installed `aos_toolkit`** typed API (`data`, `files`,
-   `email`, `sms`, `um`, `audit`, `responses`, `memory`, `service` for outbound
-   HTTP, `secret` to read app credentials) — run **`toolkit_status()`** to install
+   `email`, `sms`, `um`, `audit`, `responses`, `memory`, `telemetry` for
+   OTel-shaped spans/logs/events (routes to Postgres by default, OliverDB
+   when the app opts in — see the telemetry callout below), `service` for
+   outbound HTTP, `secret` to read app credentials) — run **`toolkit_status()`** to install
    or re-align the toolkit first (setup below). Send SMS with `ctx.sms.send(to, body)`
    or `ctx.sms.send_template(to, name, variables)` (E.164 numbers). **Ground all code on these signatures — do
    not guess the API.** For an **external integration** (Stripe, Gusto, …): read
@@ -93,6 +95,38 @@ the Python, ground the code on the real toolkit API, and test it. Depends on
 > `AOSPermissionDenied`. Full guide — fetch
 > `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/24-user-management.md`.
 
+> **Emitting observability telemetry? `ctx.telemetry` is the surface.**
+> Three emit methods: `emit_span(...)`, `emit_log(...)`, `emit_event(...)` —
+> plus `query(sql)` for reads. Each emit takes a `sink` kwarg with three
+> values: `None` or `"postgres"` → immediate Postgres write (default);
+> `"oliverdb"` → OliverDB via a scoped write key AOS provisions, or
+> **raises `AOSException`** if the app has `AppConfig.analyticsDbEnabled=false`
+> or its `analyticsDbUrl` isn't set. There is no silent fallback — the caller
+> either asks for OliverDB (and gets it or a loud failure) or asks for
+> Postgres explicitly.
+>
+> Copy-paste-modify pattern for writers — one line at the top:
+> ```
+> sink = params.get("telemetrySink", "postgres")
+> ctx.telemetry.emit_span(..., sink=sink)
+> ```
+> **Always set `resource_attributes["service.namespace"] = str(ctx.app_id)`**
+> so the scoped read key's row-pin matches your app; without it, your app's
+> own reads will filter your own writes out.
+>
+> `emit_log` / `emit_event` today RAISE on `sink="oliverdb"` because
+> OliverDB's tenant schema is span-only. Omit `sink` or pass `"postgres"`
+> until the logs/events tables ship upstream.
+>
+> For **reader** functions supporting both stores, use the **dispatcher
+> pattern**: `_handler_postgres` (existing Postgres code) +
+> `_handler_oliverdb` (SQL via `ctx.telemetry.query`) both returning the same
+> shape, chosen by `params.get("telemetrySink") == "oliverdb"`.
+>
+> Full guide with copy-pasteable examples, all five failure modes with fixes,
+> and pointers to seven working reference implementations:
+> `trillo-observability/docs/app_team_oliverdb_guide.md`.
+
 ## Permitted APIs (the capability manifest)
 
 Populate **`content.capabilities`** — the platform APIs this function is allowed to
@@ -113,8 +147,10 @@ Claude Code knows the calls; a heuristic can't). Two entry shapes:
 
 **Do NOT list:** `ctx.service` (outbound HTTP to external APIs — not an AOS endpoint,
 not gated by the manifest); `ctx.llm` / `ctx.agent` / `ctx.memory` (the runtime itself);
-`ctx.task` (a task-log primitive — ambient); and **calling other functions**
-(`ctx.run_function`) — invoking is ambient, and the callee runs under its *own* manifest.
+`ctx.task` / `ctx.telemetry` (task-log + OTel-emit primitives — ambient; OliverDB is
+addressed by per-invocation scoped keys, not the manifest); and **calling other
+functions** (`ctx.run_function`) — invoking is ambient, and the callee runs under
+its *own* manifest.
 
 An **empty `capabilities`** is correct when the code only does ambient things (calls no
 AOS data/platform APIs — e.g. pure compute, or it only calls other functions). The
