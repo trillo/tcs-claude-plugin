@@ -85,7 +85,8 @@ functions — an agent acts through **two** channels, so derive from both:
 **Do NOT list:** `fn:*` / function-name tools and `run_agent` — invoking a
 function/agent is ambient, and the callee runs under its *own* manifest; discovery
 tools (`list_classes`, `describe_class`); and `ctx.llm` / `ctx.agent` / `ctx.memory` /
-`ctx.task` (the agent runtime + the ambient task-log primitive). De-dupe the combined list.
+`ctx.task` / `ctx.telemetry` (the agent runtime + the ambient task-log + OTel-emit
+primitives). De-dupe the combined list.
 
 > **In-app sub-agent delegation is `run_agent`, and it's ambient.** The runtime
 > supplies `run_agent(agentName, query)` (or `ctx.run_agent(name, params)` in code)
