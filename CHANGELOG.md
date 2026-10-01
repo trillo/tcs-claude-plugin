@@ -5,6 +5,29 @@ items before your next session so nothing surprises you.
 
 ---
 
+## 2026-10-01 — Dev act-as-tenant + in-process `run_function`
+
+### New
+
+- **`aos_switch_tenant`** (activities group) — set a dev *active identity* per app: act as an
+  EXISTING real user in a tenant (`{appId, tenantId, userId}`), so subsequent `aos_call` /
+  `aos_token` act as that user without repeating the ids (they echo `actingAs`). Omit `userId`
+  to reset to the app-admin. Validates by minting (errors + does not switch if the tenant/user is
+  absent). Switches the **app tenant** you act as — never your Trillo AI developer identity.
+- **`aos_token` / `aos_call` gain `userId`** — mint AS a real tenant user (attribution to their
+  real identity + role) instead of the synthetic `_user_<role>`. `aos_call` with a `tenantId` and
+  no role now acts as that tenant's admin (previously it silently ran as tenant-0).
+
+### Behavior (read if you author functions)
+
+- **`ctx.run_function` runs in-process** now — no per-call HTTP hop, inherits identity/tenant — so
+  function orchestration / fan-outs no longer blow the 25s budget. From an **async** handler use
+  `await ctx.run_function_async(...)`. Kill-switch: `AOS_INPROCESS_RUN_FUNCTION=false`.
+
+> Takes effect once the tcs-ai, execution-pod, and `aos_toolkit` builds are deployed.
+
+---
+
 ## 2026-08-08 — New `scenario-to-a2ui` skill + skill-guidance fixes (plugin v0.4.0)
 
 ### New

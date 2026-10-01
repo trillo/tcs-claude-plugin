@@ -150,7 +150,10 @@ not gated by the manifest); `ctx.llm` / `ctx.agent` / `ctx.memory` (the runtime 
 `ctx.task` / `ctx.telemetry` (task-log + OTel-emit primitives — ambient; OliverDB is
 addressed by per-invocation scoped keys, not the manifest); and **calling other
 functions** (`ctx.run_function`) — invoking is ambient, and the callee runs under
-its *own* manifest.
+its *own* manifest. `ctx.run_function` runs the callee **in-process** (no HTTP hop;
+inherits your identity/tenant); from an **async** handler use
+`await ctx.run_function_async(...)`. Even so, avoid large per-row fan-outs — prefer one
+bulk call.
 
 An **empty `capabilities`** is correct when the code only does ambient things (calls no
 AOS data/platform APIs — e.g. pure compute, or it only calls other functions). The
@@ -263,6 +266,16 @@ token and call AOS directly:
    with header `Authorization: Bearer {aosToken}`. Compare what each role can do.
    Re-mint when the token expires (short TTL). **Dev-only** — refused for
    prod-promoted apps.
+
+**Act as a real tenant user (attribution).** Pass `userId` to `aos_token` / `aos_call`
+to mint AS an *existing* user in the tenant (e.g. the tenant's admin) rather than the
+synthetic `_user_<role>` — actions then log against the real user. Errors if the tenant
+or user is absent (`TENANT_NOT_FOUND` / `USER_NOT_FOUND` / `USER_NOT_IN_TENANT`).
+**Switch once instead of repeating ids:** `aos_switch_tenant({appId, tenantId, userId})`
+sets an *active identity* for this app, so subsequent `aos_call` / `aos_token` act as that
+user automatically (they echo `actingAs`); omit `userId` to reset to the app-admin. This
+switches the **app tenant** you act as — never your Trillo AI developer identity (two
+distinct axes: your authoring login vs. a tenant inside the deployed app).
 
 ## Seed data (optional, post-deploy)
 
