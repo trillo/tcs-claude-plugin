@@ -52,6 +52,42 @@ call on the installed `aos_toolkit` (now includes `ctx.llm`/`ctx.agent`). Don't 
    agent needs a function-tool that doesn't exist yet, add it via **functions**
    first.
 
+### Writing hardened codeful agents (runtime control)
+
+For any codeful agent that performs writes, enforces confirmations, needs an exact
+tool sandbox, or must avoid platform prompt/memory noise, use the runtime control
+surface on `ctx.agent` and `ctx`:
+
+- **Strict tool sandboxing & clean prompt (`ctx.agent.setup(...)`):**
+  ```python
+  from aos_toolkit import ToolDecision, ctx
+
+  turn = await ctx.agent.setup(
+      strict_tools=True,              # disables discovery, save_memory, run_agent/run_function, request_tool & auto-promote
+      allow_memory=False,             # skips RAG lookup + save_memory
+      tools=["saveMealPlan"],         # optional explicit allowlist override (or [] for zero tools)
+      system_prompt=ctx.agent.render(PROMPT_TEMPLATE),  # verbatim system prompt
+      timezone="America/New_York",    # sets ctx.agent.context["today"] & ["now"] to local date/time
+  )
+  ```
+  (Codeless agents can set matching optional `AgentM` metadata flags: `strictTools`,
+  `discoveryEnabled`, `memoryEnabled`, `delegationEnabled`, `requestToolEnabled`.)
+- **Pre-execution veto & argument sanitization (`before_tool_call`):**
+  Pass a sync or async `guard(name, args)` to `await ctx.agent.execute(turn, before_tool_call=guard)`:
+  - Return `ToolDecision.allow()` (or `None`/`True`) to allow unchanged.
+  - Return `ToolDecision.allow(args={...})` (or a `dict`) to overwrite untrusted IDs/dates before dispatch.
+  - Return `ToolDecision.deny("reason", code="confirmation_required")` (or `False` / `("deny", "reason")`) to block with zero side effects and return a structured error to the LLM.
+- **Deterministic post-turn verification (`result.tool_calls`):**
+  Inspect `result.tool_calls` (`[{"name", "args", "result", "status": "ok"|"error"|"blocked"}, ...]`)
+  in `post_process` to verify whether writes actually succeeded instead of trusting prose claims.
+- **Real app roles & memory management:**
+  Use `ctx.app_roles`, `ctx.has_role("...")`, and `ctx.is_admin` (not coarse `ctx.role`) for role checks,
+  and `ctx.memory.list(agent_name)` / `delete(memory_id)` / `clear(agent_name)` when managing memories.
+- **Deterministic orchestrator hand-offs:**
+  For multi-agent routers that must preserve the user's exact words without LLM paraphrasing,
+  run with `strict_tools=True, allow_delegation=False` (or `ctx.llm.generate` classification)
+  and call `await ctx.run_agent(specialist, {"query": raw_user_text, ...})` directly in Python.
+
 > **`responseSchema` is a Gemini `Schema`, not JSON Schema.** Express a nullable
 > field as a single `type` plus `"nullable": true` (e.g.
 > `{"type": "string", "nullable": true}`) — the Gemini form, not a JSON-Schema
@@ -127,9 +163,10 @@ no pod, no model (mirrors the functions step). codeless agents skip this (no cod
   `MockCtx` into the handler module (same shape as `functions/conftest.py`).
 - Write `agents/tests/test_<snake_name>.py`. `MockCtx` mocks the loop + LLM:
   - **codeful** → drive the hooks: `ctx.agent.preload_result(
-    stop_reason="completed"|"incomplete")` to exercise branches; assert on the
-    result, `ctx.agent.state`, and recorded calls. (Worked handler + test example in
-    the testing reference:
+    stop_reason="completed"|"incomplete", tool_calls=[...])` to exercise branches
+    and `post_process` verification; assert on the result, `ctx.agent.state`,
+    `ctx.agent.setup_kwargs`, `ctx.agent.executed_hooks`, `ctx.app_roles`, and
+    recorded calls. (Worked handler + test example in the testing reference:
     `https://api.trillo.ai/trillo-ai-docs/content/04-developer-guide/22-agent-testing.md`.)
   - **oneshot** → `ctx.llm.preload({...})`; assert the handler persists/returns it
     (a function-style test).
